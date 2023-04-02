@@ -73,12 +73,12 @@ export class RequestContextService {
 
   constructor(@Inject(REQUEST) private readonly request: Request) {}
 
-  set(key: string, value: any): void {
+  set<T>(key: string, value: T): void {
     this.contextMap.set(key, value);
   }
 
-  get(key: string): any {
-    return this.contextMap.get(key);
+  get<T>(key: string): T | undefined {
+    return this.contextMap.get(key) as T;
   }
 
   getRequest(): Request {
