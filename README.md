@@ -110,9 +110,9 @@ You can inject the `RequestContextService` into any controller, service, or guar
 For example, in a guard:
 
 ```typescript
-// src/user.guard.ts
+// src/users/user.guard.ts
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { RequestContextService } from './request-context/request-context.service';
+import { RequestContextService } from '../request-context/request-context.service';
 
 @Injectable()
 export class UserGuard implements CanActivate {
@@ -122,10 +122,10 @@ export class UserGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
 
     // Extract the user token from the request headers
-    const userToken = request.headers['authorization'];
+    const userToken: string = request.headers['x-access-token'];
 
     // Store the user token in RequestContextService
-    this.requestContextService.set('userToken', userToken);
+    this.requestContextService.set<string>('userToken', userToken);
 
     // Add your authentication logic here
     const isAuthenticated = this.authenticate(userToken);
@@ -143,19 +143,44 @@ export class UserGuard implements CanActivate {
 In a service:
 
 ```typescript
-// src/user.service.ts
+// src/users/users.service.ts
 import { Injectable } from '@nestjs/common';
-import { RequestContextService } from './request-context/request-context.service';
+import { RequestContextService } from 'src/request-context/request-context.service';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(private requestContextService: RequestContextService) {}
 
   getUserToken(): string {
-    return this.requestContextService.get('userToken');
+    return this.requestContextService.get<string>('userToken');
   }
 
   // Add other service methods that require request data
+}
+```
+
+In a controller:
+
+```typescript
+// src/users/users.controller.ts
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiHeader } from '@nestjs/swagger';
+import { UserGuard } from './user.guard';
+import { UsersService } from './users.service';
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  @UseGuards(UserGuard)
+  @ApiHeader({
+    name: 'x-access-token',
+    required: true,
+  })
+  getToken(): string {
+    return this.usersService.getUserToken();
+  }
 }
 ```
 
