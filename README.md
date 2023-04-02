@@ -1,73 +1,168 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# NestJS Request-Scoped Context Demo
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This repository provides a complete example of how to create a custom request-scoped module for managing request context throughout your NestJS application. It serves as a modern alternative to `express-http-context` by leveraging NestJS's built-in features like dependency injection and request-scoped services.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Table of Contents
 
-## Description
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Understanding the Implementation](#understanding-the-implementation)
+  - [RequestContextService](#requestcontextservice)
+  - [RequestContextModule](#requestcontextmodule)
+  - [Using RequestContextService](#using-requestcontextservice)
+- [Contributing](#contributing)
+- [License](#license)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Getting Started
 
-## Installation
+Follow these instructions to set up and run the example project on your local machine.
 
-```bash
-$ npm install
+### Prerequisites
+
+Ensure you have the following installed on your system:
+
+- Node.js v18.x or newer
+- npm v9.x or newer
+
+### Installation
+
+1. Clone the repository:
+
+```sh
+git clone https://github.com/VinceChow/nestjs-request-scoped-context-demo.git
 ```
 
-## Running the app
+2. Change the working directory to the project root:
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```sh
+cd nestjs-request-scoped-context-demo
 ```
 
-## Test
+3. Install the dependencies:
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```sh
+npm install
 ```
 
-## Support
+4. Run the application:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```sh
+npm run start
+```
 
-## Stay in touch
+The application will start and listen on `http://localhost:3000`.
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Understanding the Implementation
+
+This section explains the key components of the request-scoped module and how they interact with the rest of the application.
+
+### RequestContextService
+
+`RequestContextService` is a request-scoped service responsible for storing and retrieving data for the current request. It maintains a private `contextMap` and provides `set` and `get` methods to interact with the data.
+
+```typescript
+// src/request-context/request-context.service.ts
+import { Injectable, Scope, Inject } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
+
+@Injectable({ scope: Scope.REQUEST })
+export class RequestContextService {
+  private readonly contextMap: Map<string, any> = new Map();
+
+  constructor(@Inject(REQUEST) private readonly request: Request) {}
+
+  set(key: string, value: any): void {
+    this.contextMap.set(key, value);
+  }
+
+  get(key: string): any {
+    return this.contextMap.get(key);
+  }
+
+  getRequest(): Request {
+    return this.request;
+  }
+}
+```
+
+### RequestContextModule
+
+`RequestContextModule` is a standard NestJS module that exports the `RequestContextService` so that it can be injected into other parts of the application.
+
+```typescript
+// src/request-context/request-context.module.ts
+import { Module } from '@nestjs/common';
+import { RequestContextService } from './request-context.service';
+
+@Module({
+  providers: [RequestContextService],
+  exports: [RequestContextService],
+})
+export class RequestContextModule {}
+```
+
+### Using RequestContextService
+
+You can inject the `RequestContextService` into any controller, service, or guard to store and retrieve data for the current request.
+
+For example, in a guard:
+
+```typescript
+// src/user.guard.ts
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { RequestContextService } from './request-context/request-context.service';
+
+@Injectable()
+export class UserGuard implements CanActivate {
+  constructor(private requestContextService: RequestContextService) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+
+    // Extract the user token from the request headers
+    const userToken = request.headers['authorization'];
+
+    // Store the user token in RequestContextService
+    this.requestContextService.set('userToken', userToken);
+
+    // Add your authentication logic here
+    const isAuthenticated = this.authenticate(userToken);
+
+    return isAuthenticated;
+  }
+
+  private authenticate(userToken: string): boolean {
+    // Implement your token validation logic here
+    return true; // Assume the user is authenticated for demo purposes
+  }
+}
+```
+
+In a service:
+
+```typescript
+// src/user.service.ts
+import { Injectable } from '@nestjs/common';
+import { RequestContextService } from './request-context/request-context.service';
+
+@Injectable()
+export class UserService {
+  constructor(private requestContextService: RequestContextService) {}
+
+  getUserToken(): string {
+    return this.requestContextService.get('userToken');
+  }
+
+  // Add other service methods that require request data
+}
+```
+
+## Contributing
+
+Contributions to this repository are welcome! Please feel free to submit issues or pull requests to improve the project.
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
