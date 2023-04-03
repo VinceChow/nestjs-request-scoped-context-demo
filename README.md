@@ -184,6 +184,20 @@ export class UsersController {
 }
 ```
 
+Now you may try calling the endpoint with the following `cURL` command to verify it. Replace the `{YOUR_ACCESS_TOKEN}` with your own value.
+
+```shell
+curl -X 'GET' \
+  'http://localhost:3000/users/token' \
+  -H 'accept: application/json' \
+  -H 'x-access-token: {YOUR_ACCESS_TOKEN}'
+
+// Response
+{YOUR_ACCESS_TOKEN}
+```
+
+You should be getting a response with your `{YOUR_ACCESS_TOKEN}` value relayed back to you.
+
 ## Contributing
 
 Contributions to this repository are welcome! Please feel free to submit issues or pull requests to improve the project.
